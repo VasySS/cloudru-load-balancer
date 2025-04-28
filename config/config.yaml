@@ -1,0 +1,11 @@
+backends:
+  - localhost:8081
+  - localhost:8082
+
+balancer:
+  type: "least-connections"
+
+rateLimit:
+  type: "token-bucket"
+  capacity: 100
+  # rate_per_sec: 10
