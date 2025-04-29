@@ -59,13 +59,17 @@ func (tb *UserBucket) Stop() {
 func (tb *UserBucket) ClientAllowed(identifier string) bool {
 	b := tb.getOrCreateBucket(identifier)
 
-	if b.tokens.Load() <= 0 {
-		return false
+	// CAS loop
+	for {
+		current := b.tokens.Load()
+		if current <= 0 {
+			return false
+		}
+
+		if b.tokens.CompareAndSwap(current, current-1) {
+			return true
+		}
 	}
-
-	b.tokens.Add(-1)
-
-	return true
 }
 
 func (tb *UserBucket) getOrCreateBucket(identifier string) *bucket {
@@ -117,6 +121,10 @@ func (tb *UserBucket) refillBuckets() {
 	now := time.Now().UTC()
 
 	for _, bucket := range buckets {
+		if bucket.tokens.Load() == bucket.capacity.Load() {
+			continue
+		}
+
 		lastUpdated, ok := bucket.lastUpdated.Load().(time.Time)
 		if !ok {
 			return
@@ -125,10 +133,18 @@ func (tb *UserBucket) refillBuckets() {
 		elapsed := now.Sub(lastUpdated)
 		tokensToAdd := int64(elapsed.Seconds()) * bucket.refillRate.Load()
 
-		if bucket.tokens.Load()+tokensToAdd > bucket.capacity.Load() {
-			bucket.tokens.Store(bucket.capacity.Load())
-		} else {
-			bucket.tokens.Add(tokensToAdd)
+		// CAS loop
+		for {
+			currentTokens := bucket.tokens.Load()
+			newTokens := currentTokens + tokensToAdd
+
+			if capacity := bucket.capacity.Load(); newTokens > capacity {
+				newTokens = capacity
+			}
+
+			if bucket.tokens.CompareAndSwap(currentTokens, newTokens) {
+				break
+			}
 		}
 
 		bucket.lastUpdated.Store(now)
