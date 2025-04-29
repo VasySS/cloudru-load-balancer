@@ -18,6 +18,7 @@ import (
 	"github.com/VasySS/cloudru-load-balancer/internal/http/proxy"
 	"github.com/VasySS/cloudru-load-balancer/internal/infrastructure/repository/postgres"
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit"
+	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit/leakybucket"
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit/tokenbucket"
 )
 
@@ -117,10 +118,16 @@ func newLoadBalancer(cfg config.Config) (balancer.Balancer, error) {
 
 	switch cfg.YAML.Balancer.Type {
 	case config.LeastConnectionsType:
+		slog.Info("using least connections algorithm for load balancing")
+
 		loadBalancer = balancer.NewLeastConnections(balancerBackends)
 	case config.RandomType:
+		slog.Info("using random select for load balancing")
+
 		loadBalancer = balancer.NewRandom(balancerBackends)
 	case config.RoundRobinType:
+		slog.Info("using round robin algorithm for load balancing")
+
 		loadBalancer = balancer.NewRoundRobin(balancerBackends)
 	}
 
@@ -133,9 +140,14 @@ func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository) ratelimit.Li
 
 	switch cfg.YAML.RateLimit.Type {
 	case config.TokenBucketType:
-		rateLimiter = tokenbucket.New(pgRepo)
+		slog.Info("using token bucket algorithm for rate limiting")
+
+		// TODO get values from config.
+		rateLimiter = tokenbucket.NewUserBucket(pgRepo, cfg.YAML.RateLimit.Capacity, 10, time.Second*5)
 	case config.LeakyBucketType:
-		rateLimiter = tokenbucket.New(pgRepo)
+		slog.Info("using leaky bucket algorithm for rate limiting")
+
+		rateLimiter = leakybucket.New(pgRepo)
 	}
 
 	return rateLimiter

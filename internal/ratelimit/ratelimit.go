@@ -9,5 +9,5 @@ type ClientInfo struct {
 
 // Limiter defines an interface for rate limiting requests.
 type Limiter interface {
-	ClientAllowed(client ClientInfo) bool
+	ClientAllowed(identifier string) bool
 }

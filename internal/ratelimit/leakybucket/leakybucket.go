@@ -25,7 +25,7 @@ func New(repo Repository) *LeakyBucket {
 }
 
 // ClientAllowed checks if client is allowed to make a request.
-func (b *LeakyBucket) ClientAllowed(_ ratelimit.ClientInfo) bool {
+func (b *LeakyBucket) ClientAllowed(_ string) bool {
 	// TODO ...
 	return true
 }

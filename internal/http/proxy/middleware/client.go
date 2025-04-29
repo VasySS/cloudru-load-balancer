@@ -3,8 +3,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-
-	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit"
 )
 
 const rateLimitKeyHeader = "Rate-Limit-Key"
@@ -19,9 +17,11 @@ func ClientExtractor(next http.Handler) http.Handler {
 
 		headerKey := r.Header.Get(rateLimitKeyHeader)
 		if headerKey != "" {
-			newCtx := context.WithValue(ctx, ClientCtxKey{}, ratelimit.ClientInfo{Identifier: headerKey})
-
-			next.ServeHTTP(w, r.WithContext(newCtx))
+			ctx = context.WithValue(ctx, ClientCtxKey{}, headerKey)
+		} else {
+			ctx = context.WithValue(ctx, ClientCtxKey{}, r.RemoteAddr)
 		}
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

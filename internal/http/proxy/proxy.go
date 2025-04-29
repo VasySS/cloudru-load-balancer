@@ -47,7 +47,7 @@ func New(limiter ratelimit.Limiter, balancer balancer.Balancer) *Server {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	clientInfo, ok := ctx.Value(middleware.ClientCtxKey{}).(ratelimit.ClientInfo)
+	clientInfo, ok := ctx.Value(middleware.ClientCtxKey{}).(string)
 	if !ok {
 		// TODO: add error struct
 		return
