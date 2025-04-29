@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/VasySS/cloudru-load-balancer/internal/backend"
 	"github.com/VasySS/cloudru-load-balancer/internal/balancer"
 	"github.com/VasySS/cloudru-load-balancer/internal/config"
 	"github.com/VasySS/cloudru-load-balancer/internal/http/proxy"
@@ -101,20 +102,26 @@ func newPostgresRepo(ctx context.Context, closer *Closer, connectionURL string) 
 
 //nolint:ireturn
 func newLoadBalancer(cfg config.Config) (balancer.Balancer, error) {
-	backends, err := balancer.BackendServersFromArray(cfg.YAML.Backends)
+	backends, err := backend.BackendServersFromArray(cfg.YAML.Backends)
 	if err != nil {
 		return nil, fmt.Errorf("error creating backends array: %w", err)
+	}
+
+	// convert to balancer interface to pass the array
+	balancerBackends := make([]balancer.BackendServer, 0, len(backends))
+	for _, backend := range backends {
+		balancerBackends = append(balancerBackends, backend)
 	}
 
 	var loadBalancer balancer.Balancer
 
 	switch cfg.YAML.Balancer.Type {
 	case config.LeastConnectionsType:
-		loadBalancer = balancer.NewLeastConnections(backends)
+		loadBalancer = balancer.NewLeastConnections(balancerBackends)
 	case config.RandomType:
-		loadBalancer = balancer.NewRandom(backends)
+		loadBalancer = balancer.NewRandom(balancerBackends)
 	case config.RoundRobinType:
-		loadBalancer = balancer.NewRoundRobin(backends)
+		loadBalancer = balancer.NewRoundRobin(balancerBackends)
 	}
 
 	return loadBalancer, nil
