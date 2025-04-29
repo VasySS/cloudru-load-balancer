@@ -23,6 +23,8 @@ func NewRandom(backends []BackendServer) *Random {
 }
 
 // Next returns a random backend server.
+//
+//nolint:ireturn
 func (r *Random) Next() (BackendServer, error) {
 	nextServerIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(r.backends))))
 	if err != nil {

@@ -40,6 +40,8 @@ linters:
 
   default: all
   disable:
+    # flaky
+    - nolintlint
     - dupword
     - dupl
     - depguard

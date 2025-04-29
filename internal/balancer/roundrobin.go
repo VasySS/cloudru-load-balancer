@@ -18,6 +18,8 @@ func NewRoundRobin(backends []BackendServer) *RoundRobin {
 }
 
 // Next gets next backend server.
+//
+//nolint:ireturn
 func (rb *RoundRobin) Next() (BackendServer, error) {
 	//nolint:nilnil
 	return nil, nil

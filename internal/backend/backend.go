@@ -1,3 +1,4 @@
+// Package backend contains logic for creating backend servers.
 package backend
 
 import (
@@ -8,25 +9,26 @@ import (
 	"sync/atomic"
 )
 
-// BackendServer represents a server, which accepts requests from load balancer.
-type BackendServer struct {
+// Backend represents a server, which accepts requests from load balancer.
+type Backend struct {
 	URL         *url.URL
 	healthy     atomic.Bool
 	connections atomic.Int64
 	proxy       *httputil.ReverseProxy
 }
 
-func (s *BackendServer) Healthy() bool {
+// Healthy returns current health status (atomic).
+func (s *Backend) Healthy() bool {
 	return s.healthy.Load()
 }
 
 // GetConnections returns current connections count (atomic).
-func (s *BackendServer) GetConnections() int64 {
+func (s *Backend) GetConnections() int64 {
 	return s.connections.Load()
 }
 
 // ServeHTTP passes the request to the backend server using reverse proxy.
-func (s *BackendServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.connections.Add(1)
 	defer s.connections.Add(-1)
 
@@ -35,13 +37,13 @@ func (s *BackendServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Balancer defines an interface for balancing the load between backends.
 type Balancer interface {
-	Next() (*BackendServer, error)
-	UpdateBackends(backends []*BackendServer)
+	Next() (*Backend, error)
+	UpdateBackends(backends []*Backend)
 }
 
-// BackendServersFromArray creates an array of backend servers from config URLs.
-func BackendServersFromArray(backends []string) ([]*BackendServer, error) {
-	res := make([]*BackendServer, 0, len(backends))
+// NewBackendServers creates an array of backend servers from config URLs.
+func NewBackendServers(backends []string) ([]*Backend, error) {
+	res := make([]*Backend, 0, len(backends))
 
 	for _, b := range backends {
 		parsedURL, err := url.Parse(b)
@@ -49,7 +51,7 @@ func BackendServersFromArray(backends []string) ([]*BackendServer, error) {
 			return nil, fmt.Errorf("error parsing backend url: %w", err)
 		}
 
-		srv := &BackendServer{
+		srv := &Backend{
 			URL:   parsedURL,
 			proxy: httputil.NewSingleHostReverseProxy(parsedURL),
 		}

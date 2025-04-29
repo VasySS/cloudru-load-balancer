@@ -6,10 +6,12 @@ import (
 )
 
 // BackendServer defines the interface for backend servers.
+//
+//go:generate go tool mockery --name=BackendServer
 type BackendServer interface {
 	Healthy() bool
 	GetConnections() int64
-	ServeHTTP(http.ResponseWriter, *http.Request)
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 // Balancer defines an interface for balancing the load between backends.
