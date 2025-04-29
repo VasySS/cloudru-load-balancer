@@ -3,13 +3,35 @@ package balancer
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httputil"
 	"net/url"
+	"sync/atomic"
 )
 
 // BackendServer represents a server, which accepts requests from load balancer.
 type BackendServer struct {
-	URL     *url.URL
-	Healthy bool
+	URL         *url.URL
+	healthy     atomic.Bool
+	connections atomic.Int64
+	proxy       *httputil.ReverseProxy
+}
+
+func (s *BackendServer) Healthy() bool {
+	return s.healthy.Load()
+}
+
+// GetConnections returns current connections count (atomic).
+func (s *BackendServer) GetConnections() int64 {
+	return s.connections.Load()
+}
+
+// ServeHTTP passes the request to the backend server using reverse proxy.
+func (s *BackendServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.connections.Add(1)
+	defer s.connections.Add(-1)
+
+	s.proxy.ServeHTTP(w, r)
 }
 
 // Balancer defines an interface for balancing the load between backends.
@@ -28,8 +50,14 @@ func BackendServersFromArray(backends []string) ([]*BackendServer, error) {
 			return nil, fmt.Errorf("error parsing backend url: %w", err)
 		}
 
-		// all are healthy by default
-		res = append(res, &BackendServer{URL: parsedURL, Healthy: true})
+		srv := &BackendServer{
+			URL:   parsedURL,
+			proxy: httputil.NewSingleHostReverseProxy(parsedURL),
+		}
+
+		srv.healthy.Store(true)
+
+		res = append(res, srv)
 	}
 
 	return res, nil

@@ -110,7 +110,7 @@ func newLoadBalancer(cfg config.Config) (balancer.Balancer, error) {
 
 	switch cfg.YAML.Balancer.Type {
 	case config.LeastConnectionsType:
-		loadBalancer = balancer.NewRandom(backends)
+		loadBalancer = balancer.NewLeastConnections(backends)
 	case config.RandomType:
 		loadBalancer = balancer.NewRandom(backends)
 	case config.RoundRobinType:

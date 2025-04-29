@@ -3,7 +3,6 @@ package proxy
 
 import (
 	"net/http"
-	"net/http/httputil"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -65,7 +64,5 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(targetBackend.URL)
-
-	proxy.ServeHTTP(w, r)
+	targetBackend.ServeHTTP(w, r)
 }
