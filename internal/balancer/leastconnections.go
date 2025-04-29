@@ -10,11 +10,11 @@ var _ Balancer = (*LeastConnections)(nil)
 
 // LeastConnections implements least connections balancing.
 type LeastConnections struct {
-	backends atomic.Pointer[[]*BackendServer]
+	backends atomic.Pointer[[]BackendServer]
 }
 
 // NewLeastConnections creates a new LeastConnections balancer.
-func NewLeastConnections(backends []*BackendServer) *LeastConnections {
+func NewLeastConnections(backends []BackendServer) *LeastConnections {
 	lc := &LeastConnections{}
 	lc.UpdateBackends(backends)
 
@@ -22,14 +22,14 @@ func NewLeastConnections(backends []*BackendServer) *LeastConnections {
 }
 
 // Next gets next backend server.
-func (lc *LeastConnections) Next() (*BackendServer, error) {
+func (lc *LeastConnections) Next() (BackendServer, error) {
 	backends := *lc.backends.Load()
 
 	if len(backends) == 0 {
 		return nil, errors.New("no backends available")
 	}
 
-	var selected *BackendServer
+	var selected BackendServer
 	var minConns int64 = math.MaxInt64
 
 	for _, backend := range backends {
@@ -53,9 +53,9 @@ func (lc *LeastConnections) Next() (*BackendServer, error) {
 }
 
 // UpdateBackends updates the list of available backends.
-func (lc *LeastConnections) UpdateBackends(backends []*BackendServer) {
+func (lc *LeastConnections) UpdateBackends(backends []BackendServer) {
 	// create a new slice and copy to prevent external modification
-	copied := make([]*BackendServer, len(backends))
+	copied := make([]BackendServer, len(backends))
 	copy(copied, backends)
 
 	lc.backends.Store(&copied)
