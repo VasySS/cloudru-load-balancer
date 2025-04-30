@@ -1,17 +1,9 @@
 package balancer
 
 import (
-	"errors"
 	"log/slog"
 	"math"
 	"sync/atomic"
-)
-
-var (
-	// ErrNoBackends is returned when there are no backends available (none were set).
-	ErrNoBackends = errors.New("no backends available")
-	// ErrNoHealthyBackends is returned when there are no healthy backends available.
-	ErrNoHealthyBackends = errors.New("no healthy backends available")
 )
 
 var _ Balancer = (*LeastConnections)(nil)
