@@ -3,11 +3,11 @@ backends:
   - http://localhost:8082
 
 balancer:
-  type: "least-connections"
+  type: "least-connections" # available: "least-connections", "random", "round-robin"
   backendsCheckInterval: 10s
 
 rateLimit:
-  type: "token-bucket"
+  type: "token-bucket" # available: "token-bucket", "leaky-bucket"
   capacity: 100
   tokenRate: 10 # refill rate for token bucket and leak rate for leaky bucket
   tokenInterval: 5s # refill interval for token bucket and leak interval for leaky bucket
