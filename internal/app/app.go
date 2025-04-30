@@ -39,7 +39,7 @@ func Run(ctx context.Context, cfg config.Config) error {
 		return err
 	}
 
-	rateLimiter := newRateLimiter(cfg, pgRepo)
+	rateLimiter := newRateLimiter(cfg, pgRepo, closer)
 
 	loadBalancer, err := newLoadBalancer(cfg)
 	if err != nil {
@@ -135,7 +135,7 @@ func newLoadBalancer(cfg config.Config) (balancer.Balancer, error) {
 }
 
 //nolint:ireturn
-func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository) ratelimit.Limiter {
+func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository, closer *Closer) ratelimit.Limiter {
 	var rateLimiter ratelimit.Limiter
 
 	switch cfg.YAML.RateLimit.Type {
@@ -143,7 +143,10 @@ func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository) ratelimit.Li
 		slog.Info("using token bucket algorithm for rate limiting")
 
 		// TODO get values from config.
-		rateLimiter = tokenbucket.NewUserBucket(pgRepo, cfg.YAML.RateLimit.Capacity, 10, time.Second*5)
+		tokenBucket := tokenbucket.NewUserBucket(pgRepo, cfg.YAML.RateLimit.Capacity, 10, time.Second*5)
+		closer.Add(tokenBucket.Stop)
+
+		rateLimiter = tokenBucket
 	case config.LeakyBucketType:
 		slog.Info("using leaky bucket algorithm for rate limiting")
 
