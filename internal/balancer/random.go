@@ -3,41 +3,51 @@ package balancer
 import (
 	"crypto/rand"
 	"fmt"
+	"log/slog"
 	"math/big"
-	"sync"
+	"sync/atomic"
 )
 
 var _ Balancer = (*Random)(nil)
 
 // Random implements random balancing.
 type Random struct {
-	mu       sync.Mutex
-	backends []BackendServer
+	backends atomic.Pointer[[]BackendServer]
 }
 
 // NewRandom creates a new Random balancer.
 func NewRandom(backends []BackendServer) *Random {
-	return &Random{
-		backends: backends,
-	}
+	r := &Random{}
+	r.UpdateBackends(backends)
+
+	return r
 }
 
 // Next returns a random backend server.
 //
 //nolint:ireturn
 func (r *Random) Next() (BackendServer, error) {
-	nextServerIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(r.backends))))
+	backends := *r.backends.Load()
+
+	nextServerIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(backends))))
 	if err != nil {
 		return nil, fmt.Errorf("error getting random backend: %w", err)
 	}
 
-	return r.backends[nextServerIdx.Int64()], nil
+	selected := backends[nextServerIdx.Int64()]
+
+	slog.Debug("selected backend using random",
+		slog.String("addr", selected.Address().Host),
+	)
+
+	return selected, nil
 }
 
 // UpdateBackends updates the list of available backends.
 func (r *Random) UpdateBackends(backends []BackendServer) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	// create a new slice and copy to prevent external modification
+	copied := make([]BackendServer, len(backends))
+	copy(copied, backends)
 
-	r.backends = backends
+	r.backends.Store(&copied)
 }

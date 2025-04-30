@@ -69,8 +69,6 @@ func (lc *LeastConnections) Next() (BackendServer, error) {
 }
 
 // UpdateBackends updates the list of available backends.
-//
-//nolint:ireturn
 func (lc *LeastConnections) UpdateBackends(backends []BackendServer) {
 	// create a new slice and copy to prevent external modification
 	copied := make([]BackendServer, len(backends))
