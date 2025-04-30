@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit/leakybucket"
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit/leakybucket/mocks"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestClientAllowed_Overflow(t *testing.T) {
