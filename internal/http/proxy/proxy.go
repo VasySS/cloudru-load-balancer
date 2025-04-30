@@ -2,7 +2,6 @@
 package proxy
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +24,7 @@ func New(limiter ratelimit.Limiter, balancer balancer.Balancer) *Server {
 	mux := chi.NewMux()
 
 	mux.Use(
+		chiMiddleware.Heartbeat("/health"),
 		chiMiddleware.RequestID,
 		middleware.Logger,
 		chiMiddleware.Recoverer,
@@ -34,6 +34,27 @@ func New(limiter ratelimit.Limiter, balancer balancer.Balancer) *Server {
 		chiMiddleware.Compress(5),
 	)
 
+	mux.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		clientInfo, ok := r.Context().Value(middleware.ClientCtxKey{}).(string)
+		if !ok {
+			http.Error(w, "unable to identify client", http.StatusInternalServerError)
+			return
+		}
+
+		if !limiter.ClientAllowed(clientInfo) {
+			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+
+		targetBackend, err := balancer.Next()
+		if err != nil {
+			http.Error(w, "no available backends", http.StatusServiceUnavailable)
+			return
+		}
+
+		targetBackend.ServeHTTP(w, r)
+	}))
+
 	return &Server{
 		mux:      mux,
 		limiter:  limiter,
@@ -42,27 +63,5 @@ func New(limiter ratelimit.Limiter, balancer balancer.Balancer) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	clientInfo, ok := ctx.Value(middleware.ClientCtxKey{}).(string)
-	if !ok {
-		slog.Debug("no client info in context")
-
-		return
-	}
-
-	if !s.limiter.ClientAllowed(clientInfo) {
-		slog.Debug("client have reached rate limit")
-
-		return
-	}
-
-	targetBackend, err := s.balancer.Next()
-	if err != nil {
-		slog.Debug("error getting next backend from balancer", slog.Any("error", err))
-
-		return
-	}
-
-	targetBackend.ServeHTTP(w, r)
+	s.mux.ServeHTTP(w, r)
 }
