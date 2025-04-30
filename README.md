@@ -3,6 +3,17 @@
 [![License](https://img.shields.io/github/license/vasyss/cloudru-load-balancer)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/vasyss/segoya-backend)](go.mod)
 
+Load balancers implemented:
+
+- **Least connections**
+- **Round robin**
+- **Random**
+
+Rate limiters implemented:
+
+- **Token bucket**
+<!-- - **Leaky bucket** -->
+
 ## Getting started
 
 ### Prerequisites
