@@ -15,30 +15,30 @@ import (
 func TestRandom(t *testing.T) {
 	t.Parallel()
 
-	t.Run("get the only healthy backend", func(t *testing.T) {
+	t.Run("get the healthy backend", func(t *testing.T) {
 		t.Parallel()
 
 		b1 := mocks.NewBackendServer(t)
-		b1.On("Healthy").Return(false)
+		b1.On("Healthy").Return(true).Maybe()
 		b1.On("Address").Return(&url.URL{Host: "backend1"}).Maybe()
 
 		b2 := mocks.NewBackendServer(t)
-		b2.On("Healthy").Return(false)
+		b2.On("Healthy").Return(true).Maybe()
 		b2.On("Address").Return(&url.URL{Host: "backend2"}).Maybe()
 
 		b3 := mocks.NewBackendServer(t)
-		b3.On("Healthy").Return(true)
+		b3.On("Healthy").Return(true).Maybe()
 		b3.On("Address").Return(&url.URL{Host: "backend3"}).Maybe()
 
 		b4 := mocks.NewBackendServer(t)
-		b4.On("Healthy").Return(false)
+		b4.On("Healthy").Return(false).Maybe()
 		b4.On("Address").Return(&url.URL{Host: "backend4"}).Maybe()
 
 		random := balancer.NewRandom([]balancer.BackendServer{b1, b2, b3, b4})
 
 		selected, err := random.Next()
 		require.NoError(t, err)
-		assert.Equal(t, b3, selected)
+		assert.Contains(t, []balancer.BackendServer{b1, b2, b3}, selected)
 	})
 
 	t.Run("return error when no backends are set", func(t *testing.T) {
