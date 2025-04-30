@@ -3,6 +3,7 @@ package config
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -70,6 +71,11 @@ func MustInit() Config {
 
 	if err := cleanenv.ReadConfig(".env", &cfg.ENV); err != nil {
 		slog.Info("failed to read .env", slog.Any("error", err))
+	}
+
+	if err := cleanenv.ReadEnv(&cfg.ENV); err != nil {
+		slog.Error("failed to read environment variables", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	return cfg

@@ -15,15 +15,53 @@ services:
     networks:
       - balancer-network
 
+  dummy1:
+    container_name: balancer-dummy-backend1
+    build:
+      context: ./dummy
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+    networks:
+      - balancer-network
+
+  dummy2:
+    container_name: balancer-dummy-backend2
+    build:
+      context: ./dummy
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+    networks:
+      - balancer-network
+
   balancer:
     container_name: balancer
     build: .
     ports:
       - "${APP_PORT}:${APP_PORT}"
+    environment:
+      - PG_USER=${PG_USER}
+      - PG_PASS=${PG_PASS}
+      - PG_HOST=postgres
+      - PG_DB=${PG_DB}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
     networks:
       - balancer-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dummy1:
+        condition: service_healthy
+      dummy2:
+        condition: service_healthy
 
 networks:
   balancer-network:

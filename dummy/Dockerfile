@@ -13,7 +13,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build \
     -trimpath \
     -ldflags "-s -w" \
-    -o main ./cmd/balancer
+    -o main main.go
 
 ##################################################
 # Runtime stage
@@ -29,12 +29,10 @@ RUN addgroup -S appgroup && \
     chown -R appuser:appgroup /app
 
 COPY --from=builder --chown=appuser:appgroup /build/main .
-COPY --from=builder --chown=appuser:appgroup /build/config/config.yaml ./config/config.yaml
 
 USER appuser
 
 HEALTHCHECK --start-period=10s --retries=3 \
     CMD [ "curl", "-f", "http://localhost:8080/health" ]
 
-EXPOSE 8080
 ENTRYPOINT ["./main"]

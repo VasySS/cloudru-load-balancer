@@ -2,6 +2,7 @@
 package proxy
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -33,10 +34,6 @@ func New(limiter ratelimit.Limiter, balancer balancer.Balancer) *Server {
 		chiMiddleware.Compress(5),
 	)
 
-	// mux.Post("/clients", func(w http.ResponseWriter, r *http.Request) {
-	// 	// ...
-	// })
-
 	return &Server{
 		mux:      mux,
 		limiter:  limiter,
@@ -49,18 +46,21 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	clientInfo, ok := ctx.Value(middleware.ClientCtxKey{}).(string)
 	if !ok {
-		// TODO: add error struct
+		slog.Debug("no client info in context")
+
 		return
 	}
 
 	if !s.limiter.ClientAllowed(clientInfo) {
-		// TODO: add error struct
+		slog.Debug("client have reached rate limit")
+
 		return
 	}
 
 	targetBackend, err := s.balancer.Next()
 	if err != nil {
-		// TODO: add error struct
+		slog.Debug("error getting next backend from balancer", slog.Any("error", err))
+
 		return
 	}
 
