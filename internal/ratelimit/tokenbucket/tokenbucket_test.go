@@ -5,16 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit/tokenbucket"
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit/tokenbucket/mocks"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestClientAllowed_TokenAvailable(t *testing.T) {
 	t.Parallel()
 
 	mockRepo := mocks.NewRepository(t)
-	tb := tokenbucket.NewUserBucket(mockRepo, 2, 1, time.Second)
+
+	tb := tokenbucket.NewUserBucket(mockRepo, 2, 1, time.Second*2)
 	defer tb.Stop()
 
 	id := "user1"
@@ -28,7 +30,7 @@ func TestClientAllowed_TokenAvailable(t *testing.T) {
 	allowed = tb.ClientAllowed(id)
 	assert.False(t, allowed, "expected client to be denied on third attempt")
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 3)
 
 	allowed = tb.ClientAllowed(id)
 	assert.True(t, allowed, "expected client to be allowed after tokens are refilled")
@@ -39,7 +41,7 @@ func TestClientAllowed_ConcurrentAccess(t *testing.T) {
 
 	mockRepo := mocks.NewRepository(t)
 
-	tb := tokenbucket.NewUserBucket(mockRepo, 100, 1, time.Second*60)
+	tb := tokenbucket.NewUserBucket(mockRepo, 100, 1, time.Second*2)
 	defer tb.Stop()
 
 	const (
@@ -69,4 +71,9 @@ func TestClientAllowed_ConcurrentAccess(t *testing.T) {
 
 	assert.False(t, tb.ClientAllowed(user1))
 	assert.False(t, tb.ClientAllowed(user2))
+
+	time.Sleep(time.Second * 3)
+
+	assert.True(t, tb.ClientAllowed(user1))
+	assert.True(t, tb.ClientAllowed(user2))
 }
