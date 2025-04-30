@@ -33,7 +33,7 @@ func (rr *RoundRobin) Next() (BackendServer, error) {
 
 	var selected BackendServer
 
-	for range len(backends) {
+	for range backends {
 		nextIdx := rr.counter.Load() % uint64(len(backends))
 		nextBackend := backends[nextIdx]
 

@@ -13,14 +13,14 @@ import (
 	"github.com/VasySS/cloudru-load-balancer/internal/ratelimit"
 )
 
-// ErrorResponse struct implements RFC 7807/RFC 9457 for http error responses.
-type ErrorResponse struct {
+// ResponseError struct implements RFC 7807/RFC 9457 for http error responses.
+type ResponseError struct {
 	Title  string `json:"title"`
 	Status int    `json:"status"`
 	Detail string `json:"detail"`
 }
 
-func (e ErrorResponse) Error() string {
+func (e ResponseError) Error() string {
 	return e.Title + ": " + e.Detail
 }
 
@@ -28,13 +28,14 @@ func writeError(w http.ResponseWriter, title, detail string, status int) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
 
-	err := ErrorResponse{
+	err := ResponseError{
 		Title:  title,
 		Status: status,
 		Detail: detail,
 	}
 
-	json.NewEncoder(w).Encode(err)
+	//nolint:errchkjson
+	_ = json.NewEncoder(w).Encode(err)
 }
 
 // Server implements ServeHTTP interface and represents a reverse proxy server.

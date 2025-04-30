@@ -17,6 +17,7 @@ type Backend struct {
 	proxy       *httputil.ReverseProxy
 }
 
+// Address returns the url of a backend.
 func (s *Backend) Address() *url.URL {
 	return s.url
 }

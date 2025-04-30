@@ -28,9 +28,7 @@ func main() {
 }
 
 func setupLogger() {
-	var slogLogger *slog.Logger
-
-	slogLogger = slog.New(
+	slogLogger := slog.New(
 		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 			Level: slog.LevelDebug,
 		}),

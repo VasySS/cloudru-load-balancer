@@ -94,6 +94,7 @@ func TestRandom(t *testing.T) {
 
 			go func() {
 				defer wg.Done()
+
 				_, _ = random.Next()
 			}()
 

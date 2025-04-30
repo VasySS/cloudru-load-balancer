@@ -132,6 +132,7 @@ func TestRoundRobin(t *testing.T) {
 
 			go func() {
 				defer wg.Done()
+
 				_, _ = rr.Next()
 			}()
 
