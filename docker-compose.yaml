@@ -59,10 +59,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      dummy1:
-        condition: service_healthy
-      dummy2:
-        condition: service_healthy
 
 networks:
   balancer-network:
