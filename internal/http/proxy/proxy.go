@@ -94,6 +94,8 @@ func New(limiter ratelimit.Limiter, balancer balancer.Balancer) *Server {
 			return
 		}
 
+		r.Host = targetBackend.Address().Host
+
 		targetBackend.ServeHTTP(w, r)
 	}))
 
