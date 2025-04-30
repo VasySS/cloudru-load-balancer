@@ -41,7 +41,7 @@ func Run(ctx context.Context, cfg config.Config) error {
 
 	rateLimiter := newRateLimiter(cfg, pgRepo, closer)
 
-	loadBalancer, err := newLoadBalancer(cfg)
+	loadBalancer, err := newLoadBalancer(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -102,8 +102,8 @@ func newPostgresRepo(ctx context.Context, closer *Closer, connectionURL string) 
 }
 
 //nolint:ireturn
-func newLoadBalancer(cfg config.Config) (balancer.Balancer, error) {
-	backends, err := backend.NewBackendServers(cfg.YAML.Backends, cfg.YAML.Balancer.BackendsCheckInterval)
+func newLoadBalancer(ctx context.Context, cfg config.Config) (balancer.Balancer, error) {
+	backends, err := backend.NewBackendServers(ctx, cfg.YAML.Backends, cfg.YAML.Balancer.BackendsCheckInterval)
 	if err != nil {
 		return nil, fmt.Errorf("error creating backends array: %w", err)
 	}

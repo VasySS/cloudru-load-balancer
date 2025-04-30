@@ -2,6 +2,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -30,8 +31,13 @@ func (b *Backend) Healthy() bool {
 }
 
 // StartHealthChecks starts the periodic health checks for the backend on "/health" path.
-func (b *Backend) StartHealthChecks() {
-	for range b.healthTicker.C {
+func (b *Backend) StartHealthChecks(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		b.healthTicker.Stop()
+
+		return
+	case <-b.healthTicker.C:
 		// not going to make a custom http client for this
 		//nolint:noctx
 		resp, err := http.Get(b.url.String() + "/health")
@@ -72,7 +78,7 @@ type Balancer interface {
 }
 
 // NewBackendServers creates an array of backend servers from config URLs and starts health checks on them.
-func NewBackendServers(backends []string, healthCheckInterval time.Duration) ([]*Backend, error) {
+func NewBackendServers(ctx context.Context, backends []string, healthCheckInterval time.Duration) ([]*Backend, error) {
 	res := make([]*Backend, 0, len(backends))
 
 	for _, b := range backends {
@@ -89,7 +95,7 @@ func NewBackendServers(backends []string, healthCheckInterval time.Duration) ([]
 
 		srv.healthy.Store(true)
 
-		go srv.StartHealthChecks()
+		go srv.StartHealthChecks(ctx)
 
 		res = append(res, srv)
 	}
