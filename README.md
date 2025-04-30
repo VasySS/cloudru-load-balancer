@@ -35,7 +35,8 @@ git clone https://github.com/VasySS/cloudru-load-balancer.git
 cd cloudru-load-balancer
 ```
 
-2. Create **.env** in root folder and set required fields (look at **.env.example** for reference)
+2. Create **.env** in root folder and set required fields (look at **.env.example** for reference).
+   Change `/config/config.yaml` to adjust settings of balancers, rate limits and URLs of backends.
 
 3. Run the command to start the app and all services needed for it:
 
