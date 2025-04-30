@@ -29,12 +29,30 @@ func NewRandom(backends []BackendServer) *Random {
 func (r *Random) Next() (BackendServer, error) {
 	backends := *r.backends.Load()
 
-	nextServerIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(backends))))
-	if err != nil {
-		return nil, fmt.Errorf("error getting random backend: %w", err)
+	if len(backends) == 0 {
+		return nil, ErrNoBackends
 	}
 
-	selected := backends[nextServerIdx.Int64()]
+	var selected BackendServer
+
+	// try to get a healthy backend with upper limit
+	for range len(backends) * 5 {
+		randomIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(backends))))
+		if err != nil {
+			return nil, fmt.Errorf("error getting random backend: %w", err)
+		}
+
+		randomBackend := backends[randomIdx.Int64()]
+
+		if randomBackend.Healthy() {
+			selected = randomBackend
+			break
+		}
+	}
+
+	if selected == nil {
+		return nil, ErrNoHealthyBackends
+	}
 
 	slog.Debug("selected backend using random",
 		slog.String("addr", selected.Address().Host),
