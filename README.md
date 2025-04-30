@@ -3,6 +3,8 @@
 [![License](https://img.shields.io/github/license/vasyss/cloudru-load-balancer)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/vasyss/segoya-backend)](go.mod)
 
+Решение для [тестового задания](./docs/original-task.md) от Cloud.ru. Из всех пунктов не реализован только CRUD для изменения лимитов у клиентов (задел под функциональность оставлен).
+
 Load balancers implemented:
 
 - **Least connections**
