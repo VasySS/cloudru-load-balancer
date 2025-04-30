@@ -12,7 +12,7 @@ Load balancers implemented:
 Rate limiters implemented:
 
 - **Token bucket**
-<!-- - **Leaky bucket** -->
+- **Leaky bucket**
 
 ## Getting started
 
