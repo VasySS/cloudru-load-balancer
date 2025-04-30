@@ -1,6 +1,7 @@
 package balancer_test
 
 import (
+	"net/url"
 	"sync"
 	"testing"
 
@@ -20,14 +21,17 @@ func TestLeastConnections(t *testing.T) {
 		b1 := mocks.NewBackendServer(t)
 		b1.On("GetConnections").Return(int64(30))
 		b1.On("Healthy").Return(true)
+		b1.On("Address").Return(&url.URL{Host: "backend1"}).Maybe()
 
 		b2 := mocks.NewBackendServer(t)
 		b2.On("GetConnections").Return(int64(10))
 		b2.On("Healthy").Return(false)
+		b2.On("Address").Return(&url.URL{Host: "backend2"}).Maybe()
 
 		b3 := mocks.NewBackendServer(t)
 		b3.On("GetConnections").Return(int64(20))
 		b3.On("Healthy").Return(true)
+		b3.On("Address").Return(&url.URL{Host: "backend3"}).Maybe()
 
 		lc := balancer.NewLeastConnections([]balancer.BackendServer{b1, b2, b3})
 
@@ -51,10 +55,12 @@ func TestLeastConnections(t *testing.T) {
 		b1 := mocks.NewBackendServer(t)
 		b1.On("GetConnections").Return(int64(0))
 		b1.On("Healthy").Return(false)
+		b1.On("Address").Return(&url.URL{Host: "backend1"}).Maybe()
 
 		b2 := mocks.NewBackendServer(t)
 		b2.On("GetConnections").Return(int64(0))
 		b2.On("Healthy").Return(false)
+		b2.On("Address").Return(&url.URL{Host: "backend2"}).Maybe()
 
 		lc := balancer.NewLeastConnections([]balancer.BackendServer{b1, b2})
 
@@ -71,6 +77,7 @@ func TestLeastConnections(t *testing.T) {
 		b2 := mocks.NewBackendServer(t)
 		b2.On("GetConnections").Return(int64(0))
 		b2.On("Healthy").Return(true)
+		b2.On("Address").Return(&url.URL{Host: "backend2"}).Maybe()
 
 		lc.UpdateBackends([]balancer.BackendServer{b2})
 
@@ -98,11 +105,12 @@ func TestLeastConnections(t *testing.T) {
 			go func() {
 				defer wg.Done()
 
-				b1 := mocks.NewBackendServer(t)
-				b1.On("GetConnections").Return(int64(1)).Maybe()
-				b1.On("Healthy").Return(true).Maybe()
+				b := mocks.NewBackendServer(t)
+				b.On("GetConnections").Return(int64(1)).Maybe()
+				b.On("Healthy").Return(true).Maybe()
+				b.On("Address").Return(&url.URL{Host: "backend1"}).Maybe()
 
-				lc.UpdateBackends([]balancer.BackendServer{b1})
+				lc.UpdateBackends([]balancer.BackendServer{b})
 			}()
 		}
 
