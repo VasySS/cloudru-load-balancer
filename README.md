@@ -44,4 +44,6 @@ docker compose up -d --build balancer postgres
 
 ## Example of running a load test
 
+Top of the terminal are dummy backends (left is fast, right is slow), bottom is the output of Apache Bench. Algorithms used for this example: load balancer is `least connections`, rate limiter - `token bucket`.
+
 [![asciicast](https://asciinema.org/a/FQjXm3NFjJ61Nhb1pmsYw7FOr.svg)](https://asciinema.org/a/FQjXm3NFjJ61Nhb1pmsYw7FOr)
