@@ -23,14 +23,22 @@ func TestRandom(t *testing.T) {
 		b1.On("Address").Return(&url.URL{Host: "backend1"}).Maybe()
 
 		b2 := mocks.NewBackendServer(t)
-		b2.On("Healthy").Return(true)
+		b2.On("Healthy").Return(false)
 		b2.On("Address").Return(&url.URL{Host: "backend2"}).Maybe()
 
-		random := balancer.NewRandom([]balancer.BackendServer{b1, b2})
+		b3 := mocks.NewBackendServer(t)
+		b3.On("Healthy").Return(true)
+		b3.On("Address").Return(&url.URL{Host: "backend3"}).Maybe()
+
+		b4 := mocks.NewBackendServer(t)
+		b4.On("Healthy").Return(false)
+		b4.On("Address").Return(&url.URL{Host: "backend4"}).Maybe()
+
+		random := balancer.NewRandom([]balancer.BackendServer{b1, b2, b3, b4})
 
 		selected, err := random.Next()
 		require.NoError(t, err)
-		assert.Equal(t, b2, selected)
+		assert.Equal(t, b3, selected)
 	})
 
 	t.Run("return error when no backends are set", func(t *testing.T) {
