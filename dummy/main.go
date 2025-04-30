@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -33,7 +34,16 @@ func main() {
 			time.Sleep(time.Millisecond * 500)
 		}
 
-		w.Write([]byte("handled request successfully"))
+		type response struct {
+			Result string `json:"result"`
+		}
+
+		resp := response{
+			Result: "handled request successfully",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	srv := http.Server{
