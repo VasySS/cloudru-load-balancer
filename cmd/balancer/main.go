@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+	setupLogger()
+
 	cfg := config.MustInit()
 
 	slog.Info("starting the application")
@@ -22,4 +25,16 @@ func main() {
 	if err := app.Run(ctx, cfg); err != nil {
 		slog.Error("error running app", slog.Any("error", err))
 	}
+}
+
+func setupLogger() {
+	var slogLogger *slog.Logger
+
+	slogLogger = slog.New(
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}),
+	)
+
+	slog.SetDefault(slogLogger)
 }

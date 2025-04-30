@@ -3,6 +3,7 @@ package tokenbucket
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -62,6 +63,12 @@ func (tb *UserBucket) ClientAllowed(identifier string) bool {
 	// CAS loop
 	for {
 		current := b.tokens.Load()
+
+		slog.Debug("token bucket check",
+			slog.String("id", identifier),
+			slog.Int64("tokens", current),
+		)
+
 		if current <= 0 {
 			return false
 		}

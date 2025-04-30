@@ -11,10 +11,14 @@ import (
 
 // Backend represents a server, which accepts requests from load balancer.
 type Backend struct {
-	URL         *url.URL
+	url         *url.URL
 	healthy     atomic.Bool
 	connections atomic.Int64
 	proxy       *httputil.ReverseProxy
+}
+
+func (s *Backend) Address() *url.URL {
+	return s.url
 }
 
 // Healthy returns current health status (atomic).
@@ -52,7 +56,7 @@ func NewBackendServers(backends []string) ([]*Backend, error) {
 		}
 
 		srv := &Backend{
-			URL:   parsedURL,
+			url:   parsedURL,
 			proxy: httputil.NewSingleHostReverseProxy(parsedURL),
 		}
 

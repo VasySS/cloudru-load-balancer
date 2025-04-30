@@ -2,6 +2,7 @@ package balancer
 
 import (
 	"errors"
+	"log/slog"
 	"math"
 	"sync/atomic"
 )
@@ -58,6 +59,11 @@ func (lc *LeastConnections) Next() (BackendServer, error) {
 	if selected == nil {
 		return nil, ErrNoHealthyBackends
 	}
+
+	slog.Debug("selected backend with least connections",
+		slog.String("addr", selected.Address().Host),
+		slog.Int64("connections", selected.GetConnections()),
+	)
 
 	return selected, nil
 }

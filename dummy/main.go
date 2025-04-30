@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -17,6 +18,8 @@ func main() {
 		log.Fatal("the port is not set")
 	}
 
+	mode := os.Getenv("MODE")
+
 	mux := chi.NewMux()
 
 	mux.Use(
@@ -26,6 +29,10 @@ func main() {
 	)
 
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		if mode == "slow" {
+			time.Sleep(time.Millisecond * 500)
+		}
+
 		w.Write([]byte("handled request successfully"))
 	})
 
