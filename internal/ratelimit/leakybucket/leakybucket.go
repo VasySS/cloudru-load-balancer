@@ -11,6 +11,8 @@ import (
 )
 
 // Repository defines an interface to save client data.
+//
+//go:generate go tool mockery --name=Repository
 type Repository interface {
 	SaveClient(ctx context.Context, client ratelimit.ClientInfo) error
 }
@@ -25,20 +27,22 @@ type bucket struct {
 
 // UserBucket implements a leaky bucket algorihtm per user.
 type UserBucket struct {
-	repo     Repository
-	capacity int
-	leakRate int
-	mu       sync.RWMutex
-	buckets  map[string]*bucket
+	repo         Repository
+	capacity     int
+	leakRate     int
+	mu           sync.RWMutex
+	buckets      map[string]*bucket
+	leakInterval time.Duration
 }
 
 // NewUserBucket creates a new LeakyBucket.
-func NewUserBucket(repo Repository, capacity, leakRate int) *UserBucket {
+func NewUserBucket(repo Repository, capacity, leakRate int, leakInterval time.Duration) *UserBucket {
 	lb := &UserBucket{
-		repo:     repo,
-		capacity: capacity,
-		leakRate: leakRate,
-		buckets:  make(map[string]*bucket),
+		repo:         repo,
+		capacity:     capacity,
+		leakRate:     leakRate,
+		buckets:      make(map[string]*bucket),
+		leakInterval: leakInterval,
 	}
 
 	return lb
@@ -54,7 +58,7 @@ func (lb *UserBucket) ClientAllowed(identifier string) bool {
 	now := time.Now().UTC()
 	elapsed := now.Sub(b.lastUpdated)
 
-	leakedTokens := int(elapsed.Seconds() * float64(b.leakRate))
+	leakedTokens := int((elapsed.Seconds() / lb.leakInterval.Seconds()) * float64(b.leakRate))
 	newTokens := max(b.tokens-leakedTokens, 0)
 
 	if newTokens+1 > b.capacity {
@@ -89,7 +93,7 @@ func (lb *UserBucket) getOrCreateBucket(identifier string) *bucket {
 	leakRate := lb.leakRate
 
 	newBucket := &bucket{
-		tokens:      capacity,
+		tokens:      0,
 		capacity:    capacity,
 		leakRate:    leakRate,
 		lastUpdated: time.Now().UTC(),

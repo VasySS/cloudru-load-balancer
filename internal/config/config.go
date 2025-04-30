@@ -40,10 +40,10 @@ type Balancer struct {
 
 // RateLimit contains configuration for rate limiters.
 type RateLimit struct {
-	Type           RateLimiterType `env-default:"token-bucket" yaml:"type"`
-	Capacity       int             `env-default:"100"          yaml:"capacity"`
-	TokenRate      int             `env-default:"10"           yaml:"tokenRate"`
-	RefillInterval time.Duration   `env-default:"5s"           yaml:"refillInterval"`
+	Type          RateLimiterType `env-default:"token-bucket" yaml:"type"`
+	Capacity      int             `env-default:"100"          yaml:"capacity"`
+	TokenRate     int             `env-default:"10"           yaml:"tokenRate"`
+	TokenInterval time.Duration   `env-default:"5s"           yaml:"tokenInterval"`
 }
 
 // configYAML contains values from /config/config.yaml.

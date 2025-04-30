@@ -10,4 +10,4 @@ rateLimit:
   type: "token-bucket"
   capacity: 100
   tokenRate: 10 # refill rate for token bucket and leak rate for leaky bucket
-  refillInterval: 5s # for token bucket only
+  tokenInterval: 5s # refill interval for token bucket and leak interval for leaky bucket

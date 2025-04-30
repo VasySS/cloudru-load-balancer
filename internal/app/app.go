@@ -145,7 +145,7 @@ func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository, closer *Clos
 		tokenBucket := tokenbucket.NewUserBucket(pgRepo,
 			cfg.YAML.RateLimit.Capacity,
 			cfg.YAML.RateLimit.TokenRate,
-			cfg.YAML.RateLimit.RefillInterval,
+			cfg.YAML.RateLimit.TokenInterval,
 		)
 		closer.Add(tokenBucket.Stop)
 
@@ -156,6 +156,7 @@ func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository, closer *Clos
 		rateLimiter = leakybucket.NewUserBucket(pgRepo,
 			cfg.YAML.RateLimit.Capacity,
 			cfg.YAML.RateLimit.TokenRate,
+			cfg.YAML.RateLimit.TokenInterval,
 		)
 	}
 
