@@ -23,7 +23,7 @@ type bucket struct {
 	lastUpdated atomic.Value // time.Time
 }
 
-// UserBucket implements a token bucket algorithm.
+// UserBucket implements a token bucket algorithm per user.
 type UserBucket struct {
 	repo       Repository
 	capacity   int
@@ -81,11 +81,11 @@ func (tb *UserBucket) ClientAllowed(identifier string) bool {
 
 func (tb *UserBucket) getOrCreateBucket(identifier string) *bucket {
 	tb.mu.RLock()
-	existing, ok := tb.buckets[identifier]
+	existingBucket, ok := tb.buckets[identifier]
 	tb.mu.RUnlock()
 
 	if ok {
-		return existing
+		return existingBucket
 	}
 
 	// TODO - add data retrieval from db
@@ -98,13 +98,14 @@ func (tb *UserBucket) getOrCreateBucket(identifier string) *bucket {
 	newBucket.lastUpdated.Store(time.Now().UTC())
 
 	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
 	// check if the bucket was created between locks
 	if existing, ok := tb.buckets[identifier]; ok {
 		return existing
 	}
 
 	tb.buckets[identifier] = newBucket
-	tb.mu.Unlock()
 
 	return newBucket
 }

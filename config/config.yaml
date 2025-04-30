@@ -8,4 +8,5 @@ balancer:
 rateLimit:
   type: "token-bucket"
   capacity: 100
-  # rate_per_sec: 10
+  tokenRate: 10 # refill rate for token bucket and leak rate for leaky bucket
+  refillInterval: 5s # for token bucket only

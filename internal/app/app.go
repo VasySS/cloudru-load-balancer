@@ -142,15 +142,21 @@ func newRateLimiter(cfg config.Config, pgRepo *postgres.Repository, closer *Clos
 	case config.TokenBucketType:
 		slog.Info("using token bucket algorithm for rate limiting")
 
-		// TODO get values from config.
-		tokenBucket := tokenbucket.NewUserBucket(pgRepo, cfg.YAML.RateLimit.Capacity, 10, time.Second*5)
+		tokenBucket := tokenbucket.NewUserBucket(pgRepo,
+			cfg.YAML.RateLimit.Capacity,
+			cfg.YAML.RateLimit.TokenRate,
+			cfg.YAML.RateLimit.RefillInterval,
+		)
 		closer.Add(tokenBucket.Stop)
 
 		rateLimiter = tokenBucket
 	case config.LeakyBucketType:
 		slog.Info("using leaky bucket algorithm for rate limiting")
 
-		rateLimiter = leakybucket.New(pgRepo)
+		rateLimiter = leakybucket.NewUserBucket(pgRepo,
+			cfg.YAML.RateLimit.Capacity,
+			cfg.YAML.RateLimit.TokenRate,
+		)
 	}
 
 	return rateLimiter
