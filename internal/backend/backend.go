@@ -88,7 +88,8 @@ func NewBackendServers(backends []string, healthCheckInterval time.Duration) ([]
 		}
 
 		srv.healthy.Store(true)
-		srv.StartHealthChecks()
+
+		go srv.StartHealthChecks()
 
 		res = append(res, srv)
 	}
