@@ -34,7 +34,8 @@ type Postgres struct {
 
 // Balancer contains configuration for balancers.
 type Balancer struct {
-	Type BalancerType `env-default:"least-connections" yaml:"type"`
+	Type                  BalancerType  `env-default:"least-connections" yaml:"type"`
+	BackendsCheckInterval time.Duration `env-default:"10s"               yaml:"backendsCheckInterval"`
 }
 
 // RateLimit contains configuration for rate limiters.

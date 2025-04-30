@@ -103,7 +103,7 @@ func newPostgresRepo(ctx context.Context, closer *Closer, connectionURL string) 
 
 //nolint:ireturn
 func newLoadBalancer(cfg config.Config) (balancer.Balancer, error) {
-	backends, err := backend.NewBackendServers(cfg.YAML.Backends)
+	backends, err := backend.NewBackendServers(cfg.YAML.Backends, cfg.YAML.Balancer.BackendsCheckInterval)
 	if err != nil {
 		return nil, fmt.Errorf("error creating backends array: %w", err)
 	}

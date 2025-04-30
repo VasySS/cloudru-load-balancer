@@ -7,37 +7,62 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"sync/atomic"
+	"time"
 )
 
 // Backend represents a server, which accepts requests from load balancer.
 type Backend struct {
-	url         *url.URL
-	healthy     atomic.Bool
-	connections atomic.Int64
-	proxy       *httputil.ReverseProxy
+	url          *url.URL
+	healthy      atomic.Bool
+	healthTicker *time.Ticker
+	connections  atomic.Int64
+	proxy        *httputil.ReverseProxy
 }
 
 // Address returns the url of a backend.
-func (s *Backend) Address() *url.URL {
-	return s.url
+func (b *Backend) Address() *url.URL {
+	return b.url
 }
 
 // Healthy returns current health status (atomic).
-func (s *Backend) Healthy() bool {
-	return s.healthy.Load()
+func (b *Backend) Healthy() bool {
+	return b.healthy.Load()
+}
+
+// StartHealthChecks starts the periodic health checks for the backend on "/health" path.
+func (b *Backend) StartHealthChecks() {
+	for range b.healthTicker.C {
+		// not going to make a custom http client for this
+		//nolint:noctx
+		resp, err := http.Get(b.url.String() + "/health")
+		if err != nil {
+			b.healthy.Store(false)
+			return
+		}
+
+		//nolint:errcheck
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			b.healthy.Store(false)
+			return
+		}
+
+		b.healthy.Store(true)
+	}
 }
 
 // GetConnections returns current connections count (atomic).
-func (s *Backend) GetConnections() int64 {
-	return s.connections.Load()
+func (b *Backend) GetConnections() int64 {
+	return b.connections.Load()
 }
 
 // ServeHTTP passes the request to the backend server using reverse proxy.
-func (s *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.connections.Add(1)
-	defer s.connections.Add(-1)
+func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	b.connections.Add(1)
+	defer b.connections.Add(-1)
 
-	s.proxy.ServeHTTP(w, r)
+	b.proxy.ServeHTTP(w, r)
 }
 
 // Balancer defines an interface for balancing the load between backends.
@@ -46,8 +71,8 @@ type Balancer interface {
 	UpdateBackends(backends []*Backend)
 }
 
-// NewBackendServers creates an array of backend servers from config URLs.
-func NewBackendServers(backends []string) ([]*Backend, error) {
+// NewBackendServers creates an array of backend servers from config URLs and starts health checks on them.
+func NewBackendServers(backends []string, healthCheckInterval time.Duration) ([]*Backend, error) {
 	res := make([]*Backend, 0, len(backends))
 
 	for _, b := range backends {
@@ -57,11 +82,13 @@ func NewBackendServers(backends []string) ([]*Backend, error) {
 		}
 
 		srv := &Backend{
-			url:   parsedURL,
-			proxy: httputil.NewSingleHostReverseProxy(parsedURL),
+			url:          parsedURL,
+			proxy:        httputil.NewSingleHostReverseProxy(parsedURL),
+			healthTicker: time.NewTicker(healthCheckInterval),
 		}
 
 		srv.healthy.Store(true)
+		srv.StartHealthChecks()
 
 		res = append(res, srv)
 	}

@@ -4,6 +4,7 @@ backends:
 
 balancer:
   type: "least-connections"
+  backendsCheckInterval: 10s
 
 rateLimit:
   type: "token-bucket"
