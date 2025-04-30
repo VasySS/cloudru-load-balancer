@@ -12,6 +12,8 @@ import (
 )
 
 // Repository defines an interface to save client data.
+//
+//go:generate go tool mockery --name=Repository
 type Repository interface {
 	SaveClient(ctx context.Context, client ratelimit.ClientInfo) error
 }
